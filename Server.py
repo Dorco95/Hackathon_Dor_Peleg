@@ -6,13 +6,12 @@ from threading import *
 import struct
 import random
 
-# SERVER_IP = gethostbyname(gethostname())
-SERVER_IP = '172.1.0.4'
+SERVER_IP = gethostbyname(gethostname())
+# SERVER_IP = '172.1.0.4'
 # SERVER_IP = 'localhost'
 # SERVER_IP = get_if_addr("eth1") # 172.1.0
 # SERVER_IP = get_if_addr("eth2") # 172.99.0
 SERVER_PORT_TCP = 12712 # ??????
-SERVER_PORT_UDP = 12711
 UDP_DEST_PORT = 13110
 BUFFER_SIZE = 2048
 MAGIC_COOKIE = 0xabcddcba
@@ -32,16 +31,18 @@ class Server:
         while len(self.connections) < 2:
             udp_socket.sendto(message_to_send, ('<broadcast>', UDP_DEST_PORT))
             time.sleep(1)
+            
 
 
     def accept_conn(self, broadcast_thread, tcp_socket):
         while broadcast_thread.is_alive():
             print(len(self.connections))
+            print(broadcast_thread.is_alive())
             try:
                 client_socket, address = tcp_socket.accept()
                 player = client_socket.recv(2048).decode()
-                print(11111111, player)
                 self.connections[player] = {"client_socket": client_socket, "address": address}
+                print(self.connections)
             except timeout:
                 # traceback.print_exc()
                 continue
@@ -52,8 +53,10 @@ class Server:
             This function sends UDP broadcast messages each 1 sec
             for 10 seconds and listening for clients responses.
         """
-        self.udp_socket.bind(('', SERVER_PORT_UDP))
         self.udp_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1) # as is
+        self.udp_socket.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1) # as is
+        self.udp_socket.bind(('', SERVER_PORT_TCP))
+        self.tcp_socket.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1) # as is
         self.tcp_socket.bind(('', SERVER_PORT_TCP))
         self.tcp_socket.listen(20)
         self.tcp_socket.settimeout(2) # ???
