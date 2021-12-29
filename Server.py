@@ -13,7 +13,7 @@ SERVER_IP = gethostbyname(gethostname())
 # SERVER_IP = get_if_addr("eth1") # 172.1.0
 # SERVER_IP = get_if_addr("eth2") # 172.99.0
 SERVER_PORT_TCP = 12712 # ??????
-UDP_DEST_PORT = 13110
+UDP_DEST_PORT = 14000
 UDP_PORT = 13333
 BUFFER_SIZE = 2048
 MAGIC_COOKIE = 0xabcddcba
@@ -81,9 +81,9 @@ class Server:
         play_until = time.time() + 10
         while time.time() <= play_until and self.answered == False: # handle first to answer
             try:
-                incoming_message, _, _ = select(self.client_sockets,[],[])
-                # if len(incoming_message) == 0:
-                #     continue
+                incoming_message, _, _ = select(self.client_sockets,[],[], 10)
+                if len(incoming_message) == 0:
+                    continue
                 for sock in incoming_message:
                     ans = int(sock.recv(BUFFER_SIZE).decode())
                     player_answered = self.names[sock.getsockname()]
@@ -159,8 +159,11 @@ class Server:
             msg += f'Congratulations to the winner: {self.winner}'
         # Sending message and close connections
         for player in self.connections:
-            self.connections[player]['client_socket'].send(msg.encode())
-            self.connections[player]['client_socket'].close()
+            try:
+                self.connections[player]['client_socket'].send(msg.encode())
+                self.connections[player]['client_socket'].close()
+            except:
+                continue
         print("Game over, sending out offer requests...")
 
 
